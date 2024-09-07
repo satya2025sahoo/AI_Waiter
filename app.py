@@ -1,12 +1,51 @@
 import os
 import wave
 import pyaudio
-import FastVoice  # Updated to import the new voice module
-from SpeechToText import listen_and_translate  # Import the speech-to-text function
-from AI import AIVoiceAssistant
+import numpy as np
+from scipy.io import wavfile
 import time
 
+import voice_service as vs
+from AI import AIVoiceAssistant
+from SpeechToText import listen_and_translate  # Import the speech-to-text function
+
+
+DEFAULT_CHUNK_LENGTH = 10
+
 ai_assistant = AIVoiceAssistant()
+
+
+def is_silence(data, max_amplitude_threshold=3000):
+    """Check if audio data contains silence."""
+    max_amplitude = np.max(np.abs(data))
+    return max_amplitude <= max_amplitude_threshold
+
+
+def record_audio_chunk(audio, stream, chunk_length=DEFAULT_CHUNK_LENGTH):
+    frames = []
+    for _ in range(0, int(16000 / 1024 * chunk_length)):
+        data = stream.read(1024)
+        frames.append(data)
+
+    temp_file_path = 'temp_audio_chunk.wav'
+    with wave.open(temp_file_path, 'wb') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(audio.get_sample_size(pyaudio.paInt16))
+        wf.setframerate(16000)
+        wf.writeframes(b''.join(frames))
+
+    # Check if the recorded chunk contains silence
+    try:
+        samplerate, data = wavfile.read(temp_file_path)
+        if is_silence(data):
+            os.remove(temp_file_path)
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Error while reading audio file: {e}")
+        return False
+
 
 def main():
     audio = pyaudio.PyAudio()
@@ -16,11 +55,12 @@ def main():
     try:
         while True:
             print("_")
+            
+            # Listen for input and translate using SpeechToText.py
+            transcription = listen_and_translate()
 
-            # Use the new speech-to-text function (listen and translate)
-            transcription = listen_and_translate()  # Listen and translate to English
             if transcription:
-                print(f"Customer: {transcription}")
+                print("Customer: {}".format(transcription))
                 
                 # Add customer input to transcript
                 customer_input_transcription += "Customer: " + transcription + "\n"
@@ -28,20 +68,10 @@ def main():
                 # Process customer input and get response from AI assistant
                 output = ai_assistant.interact_with_llm(transcription)
                 if output:
-                    output = output.lstrip()  # Clean leading spaces
-                    
-                    # Pause microphone input here (close the stream)
-                    stream.stop_stream()
-
-                    # Use the voice module to convert text-to-speech
-                    FastVoice.speak(output, 'en-US-JennyNeural')
-                    print(f"AI Assistant: {output}")
-
-                    # Wait until TTS is done (give some delay to avoid premature listening)
-                    time.sleep(2)  # Adjust this as needed for longer TTS responses
-
-                    # Resume microphone input (restart the stream)
-                    stream.start_stream()
+                    output = output.lstrip()
+                    vs.speak(output)
+                    print("AI Assistant: {}".format(output))
+                    time.sleep(5) 
 
     except KeyboardInterrupt:
         print("\nStopping...")

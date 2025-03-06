@@ -56,6 +56,15 @@ Refer to `requirements.txt` for the list of necessary packages, including:
 - `speech_recognition`
 - `etc.`
 
+## Demo
+
+Watch the demo of the **AI Waiter** project in action:  
+[![AI Waiter Demo](https://img.youtube.com/vi/w4Gx194_RXs/0.jpg)](https://youtu.be/w4Gx194_RXs?si=EIDEU4tUwXwiXMcb)  
+
+In this video, you can see how the system interacts with users to place food orders using voice commands. The AI responds verbally and retains memory of previous interactions. The project is optimized to run on systems with a minimum of 8GB RAM and no GPU.  
+
+Special thanks to [@ayaanshroy](https://github.com/ayaanshroy) for their contribution to this project.
+
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
